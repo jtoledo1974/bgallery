@@ -2,13 +2,16 @@ import os
 from os.path import join, dirname, basename, isfile, isdir, splitext, relpath
 from tempfile import NamedTemporaryFile
 from urllib import unquote
+import subprocess
 import logging
-logging.basicConfig(level=logging.DEBUG)
 
 from bottle import route, run, static_file
 from DNG import DNG, JPG
 
+FNULL = open(os.devnull, 'w')  # Se usa para redirigir a /dev/null
 root = "/home/toledo/2014"
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 @route('/hello')
@@ -25,10 +28,11 @@ def get_root():
 @route("/thumb/<path:path>")
 def thumb(path):
     logging.debug("thumb %s" % path)
-    thumb_path = get_thumb(path)
+    thumb_path, orientation = get_thumb(path)
     filedir = join(root, dirname(thumb_path))
     filename = basename(thumb_path)
     res = static_file(filename, root=filedir)
+    res.set_header('Orientation', orientation)
     return res
 
 
@@ -36,7 +40,9 @@ def thumb(path):
 def folder(path):
     logging.debug("path %s" % path)
     path = join(root, path)
-    return {'listdir': sorted(os.listdir(path))}
+    res  = [(de, get_thumb(de)[1])
+            for de in sorted(os.listdir(path))]
+    return {'listdir': res}
 
 
 @route("/<path:path>")
@@ -58,9 +64,9 @@ def get_thumb(path):
         elif isfile(path):
             return get_file_thumb(path)
         else:
-            return ''
+            return ('', 1)
     except:
-        return ""
+        return ("", 1)
 
 
 def get_dir_thumb(path):
@@ -72,13 +78,21 @@ def get_dir_thumb(path):
 
 def get_file_thumb(path):
     logging.debug("get_file_thumb %s" % path)
+
     ext = splitext(path)[1].lower()
     IMG = {'.dng': DNG, '.jpg': JPG, '.jpeg': JPG}[ext]
+
     with IMG(path) as img:
         thumb = NamedTemporaryFile(
             dir=join(root, ".thumb"), suffix=".jpg", delete=False)
         thumb.write(img.read_jpeg_preview(0))
-        return relpath(thumb.name, root)
+        thumb.close()
+        try:
+            orientation = img.Orientation
+        except:
+            orientation = 1
+            logging.debug("Unable to set Orientation information")
+        return (relpath(thumb.name, root), orientation)
 
 
 run(host='localhost', port=8080, debug=True)
