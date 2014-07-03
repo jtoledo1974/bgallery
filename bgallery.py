@@ -6,7 +6,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 from bottle import route, run, static_file
-from DNG import DNG
+from DNG import DNG, JPG
 
 root = "/home/toledo/2014"
 
@@ -36,7 +36,7 @@ def thumb(path):
 def folder(path):
     logging.debug("path %s" % path)
     path = join(root, path)
-    return {'listdir': os.listdir(path)}
+    return {'listdir': sorted(os.listdir(path))}
 
 
 @route("/<path:path>")
@@ -50,6 +50,7 @@ def file(path):
 
 def get_thumb(path):
     path = unquote(path)
+    logging.debug("get_thumb %s" % path)
     path = join(root, path)
     try:
         if isdir(path):
@@ -63,16 +64,20 @@ def get_thumb(path):
 
 
 def get_dir_thumb(path):
+    logging.debug("get_dir_thumb %s" % path)
     img = [de for de in os.listdir(path)
-           if splitext(de)[1].lower() == '.dng'][0]
+           if splitext(de)[1].lower() in ('.dng', '.jpg', '.jpeg')][0]
     return get_file_thumb(join(path, img))
 
 
 def get_file_thumb(path):
-    with DNG(path) as dng:
+    logging.debug("get_file_thumb %s" % path)
+    ext = splitext(path)[1].lower()
+    IMG = {'.dng': DNG, '.jpg': JPG, '.jpeg': JPG}[ext]
+    with IMG(path) as img:
         thumb = NamedTemporaryFile(
             dir=join(root, ".thumb"), suffix=".jpg", delete=False)
-        thumb.write(dng.read_jpeg_preview(0))
+        thumb.write(img.read_jpeg_preview(0))
         return relpath(thumb.name, root)
 
 
