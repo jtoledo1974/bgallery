@@ -1,6 +1,7 @@
 import os
 from os.path import join, dirname, basename, isfile, isdir, splitext, relpath
 from tempfile import NamedTemporaryFile
+from urllib import unquote
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
@@ -40,6 +41,7 @@ def folder(path):
 
 @route("/<path:path>")
 def file(path):
+    path = unquote(path)
     logging.debug("file %s" % path)
     filedir = join(root, dirname(path))
     filename = basename(path)
@@ -47,6 +49,7 @@ def file(path):
 
 
 def get_thumb(path):
+    path = unquote(path)
     path = join(root, path)
     try:
         if isdir(path):
