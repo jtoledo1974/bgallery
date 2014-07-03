@@ -38,11 +38,12 @@ def thumb(path):
 
 @route('/<path:path>/')
 def folder(path):
-    logging.debug("path %s" % path)
-    path = join(root, path)
-    res  = [(de, get_thumb(de)[1])
-            for de in sorted(os.listdir(path))]
-    return {'listdir': res}
+    path = unquote(path)
+    logging.debug("folder %s" % path)
+    path = join(root, path, '')
+    res = [(de, get_thumb(de)[1])
+           for de in sorted(os.listdir(path))]
+    return {'listdir': res, 'dir': path}
 
 
 @route("/<path:path>")
