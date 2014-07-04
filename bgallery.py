@@ -41,7 +41,7 @@ def folder(path):
     path = unquote(path)
     logging.debug("folder %s" % path)
     path = join(root, path, '')
-    res = [(de, get_thumb(de)[1])
+    res = [(de, get_thumb(join(path, de))[1])
            for de in sorted(os.listdir(path))]
     return {'listdir': res, 'dir': path}
 
