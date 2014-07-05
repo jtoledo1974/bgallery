@@ -1,4 +1,8 @@
 *.py.bak
+*~
+*.png
+*.dot
+*.pstats
 ######### Python
 
 # Byte-compiled / optimized / DLL files
