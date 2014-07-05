@@ -46,6 +46,7 @@ def folder(path):
     realpath = join(root, path, '')
     res = [(de, get_thumb(join(realpath, de)))
            for de in sorted(os.listdir(realpath), reverse=True)]
+    # Discard directories for which we have no thumbnails
     res = [(de, orientation)
            for de, (thumb_path, orientation) in res
            if thumb_path]
@@ -90,10 +91,16 @@ def get_dir_thumb(path):
         logging.debug("Got result %s %s" % res)
         return res
     except IndexError:
-        # import pdb; pdb.set_trace()
-        img = [d for d in os.listdir(path)
-               if isdir(join(path, d))][0]
-        return get_dir_thumb(join(path, d))
+        # No proper images in the directory.
+        # Recurse into the subdirectories
+        dirlist = [d for d in os.listdir(path)
+                   if isdir(join(path, d))]
+        d = dirlist.pop(0)
+        while(d):
+            try:
+                return get_dir_thumb(join(path, d))
+            except IndexError:
+                d = dirlist.pop(0)
 
 
 def get_file_thumb(path):
