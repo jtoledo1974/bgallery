@@ -1,17 +1,15 @@
 import os
 from os.path import join, dirname, basename, isfile, isdir, splitext, relpath
-from tempfile import NamedTemporaryFile
 from urllib import unquote
-import subprocess
-import logging
 
 from bottle import route, run, static_file
-from DNG import DNG, JPG
+from previewcache import set_thumbdir, get_preview
+from DNG import logging
 
-FNULL = open(os.devnull, 'w')  # Se usa para redirigir a /dev/null
-root = "/home/toledo/2014"
+root = "/srv/originales"
+set_thumbdir('/srv/originales/.previewcache')
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 @route('/hello')
@@ -42,7 +40,7 @@ def folder(path):
     logging.debug("folder %s" % path)
     path = join(root, path, '')
     res = [(de, get_thumb(join(path, de))[1])
-           for de in sorted(os.listdir(path))]
+           for de in sorted(os.listdir(path), reverse=True)]
     return {'listdir': res, 'dir': path}
 
 
@@ -66,34 +64,31 @@ def get_thumb(path):
             return get_file_thumb(path)
         else:
             return ('', 1)
-    except:
+    except Exception as e:
+        logging.warning("Failed to retrieve a thumbnail for %s: %s" % (path, e))
         return ("", 1)
 
 
 def get_dir_thumb(path):
     logging.debug("get_dir_thumb %s" % path)
-    img = [de for de in os.listdir(path)
-           if splitext(de)[1].lower() in ('.dng', '.jpg', '.jpeg')][0]
-    return get_file_thumb(join(path, img))
+    try:
+        img = [de for de in os.listdir(path)
+               if splitext(de)[1].lower() in ('.dng', '.jpg', '.jpeg')][0]
+        res = get_file_thumb(join(path, img))
+        logging.debug("Got result %s %s" % res)
+        return res
+    except:
+        # import pdb; pdb.set_trace()
+        img = [d for d in os.listdir(path)
+               if isdir(join(path, d))][0]
+        return get_dir_thumb(join(path, d))
 
 
 def get_file_thumb(path):
     logging.debug("get_file_thumb %s" % path)
-
-    ext = splitext(path)[1].lower()
-    IMG = {'.dng': DNG, '.jpg': JPG, '.jpeg': JPG}[ext]
-
-    with IMG(path) as img:
-        thumb = NamedTemporaryFile(
-            dir=join(root, ".thumb"), suffix=".jpg", delete=False)
-        thumb.write(img.read_jpeg_preview(0))
-        thumb.close()
-        try:
-            orientation = img.Orientation
-        except:
-            orientation = 1
-            logging.debug("Unable to set Orientation information")
-        return (relpath(thumb.name, root), orientation)
+    (thumb, orientation) = get_preview(path, thumbnail=True,
+                                       return_orientation=True)
+    return (relpath(thumb, root), orientation)
 
 
-run(host='localhost', port=8080, debug=True)
+run(host='192.168.1.40', port=8888, debug=True)
