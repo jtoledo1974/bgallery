@@ -9,7 +9,11 @@ from DNG import logging
 root = "/srv/originales"
 set_thumbdir('/srv/originales/.previewcache')
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
+
+
+class HiddenError(StandardError):
+    pass
 
 
 @route('/hello')
@@ -31,6 +35,7 @@ def thumb(path):
     filename = basename(thumb_path)
     res = static_file(filename, root=filedir)
     res.set_header('Orientation', orientation)
+    res.set_header('Content-Type', 'image/jpeg')
     return res
 
 
@@ -68,19 +73,23 @@ def get_thumb(path):
         else:
             return ('', 1)
     except Exception as e:
-        logging.warning("Failed to retrieve a thumbnail for %s: %s" % (path, e))
+        logging.warning(
+            "Failed to retrieve a thumbnail for %s: %s" % (path, e))
         return ("", 1)
 
 
 def get_dir_thumb(path):
     logging.debug("get_dir_thumb %s" % path)
     try:
-        img = [de for de in os.listdir(path)
+        listdir = os.listdir(path)
+        if ".nomedia" in listdir:
+            raise HiddenError
+        img = [de for de in listdir
                if splitext(de)[1].lower() in ('.dng', '.jpg', '.jpeg')][0]
         res = get_file_thumb(join(path, img))
         logging.debug("Got result %s %s" % res)
         return res
-    except:
+    except IndexError:
         # import pdb; pdb.set_trace()
         img = [d for d in os.listdir(path)
                if isdir(join(path, d))][0]
