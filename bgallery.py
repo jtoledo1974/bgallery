@@ -43,9 +43,9 @@ def thumb(path):
 def folder(path):
     path = unquote(path)
     logging.debug("folder %s" % path)
-    path = join(root, path, '')
-    res = [(de, get_thumb(join(path, de)))
-           for de in sorted(os.listdir(path), reverse=True)]
+    realpath = join(root, path, '')
+    res = [(de, get_thumb(join(realpath, de)))
+           for de in sorted(os.listdir(realpath), reverse=True)]
     res = [(de, orientation)
            for de, (thumb_path, orientation) in res
            if thumb_path]
