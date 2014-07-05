@@ -7,9 +7,10 @@ from previewcache import set_thumbdir, get_preview
 from DNG import logging
 
 root = "/srv/originales"
+root = join(root, '')  # Guarantees roots end in /, relevant in get_file_thumb
 set_thumbdir('/srv/originales/.previewcache')
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.CRITICAL)
 
 
 class HiddenError(StandardError):
@@ -86,7 +87,7 @@ def get_dir_thumb(path):
         if ".nomedia" in listdir:
             raise HiddenError
         img = [de for de in listdir
-               if splitext(de)[1].lower() in ('.dng', '.jpg', '.jpeg')][0]
+               if de[-4:].lower() in ('.dng', '.jpg', 'jpeg')][0]
         res = get_file_thumb(join(path, img))
         logging.debug("Got result %s %s" % res)
         return res
@@ -107,7 +108,7 @@ def get_file_thumb(path):
     logging.debug("get_file_thumb %s" % path)
     (thumb, orientation) = get_preview(path, thumbnail=True,
                                        return_orientation=True)
-    return (relpath(thumb, root), orientation)
+    return (thumb[len(root):], orientation)
 
 
 run(host='192.168.1.40', port=8888, debug=True)
