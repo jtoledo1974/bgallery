@@ -3,6 +3,10 @@
 *.png
 *.dot
 *.pstats
+*.lprof
+*.prof
+DNG.py
+previewcache.py
 ######### Python
 
 # Byte-compiled / optimized / DLL files
