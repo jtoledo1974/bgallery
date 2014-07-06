@@ -17,6 +17,9 @@ class HiddenError(StandardError):
     pass
 
 
+def trace():
+    import pdb; pdb.set_trace()
+
 @route('/hello')
 def hello():
     return "Hello World!"
