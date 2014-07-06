@@ -1,8 +1,9 @@
 import os
 from os.path import join, dirname, basename, isfile, isdir, splitext, relpath
 from urllib import unquote
+from json import dumps
 
-from bottle import route, run, static_file
+from bottle import route, run, static_file, response
 from previewcache import set_thumbdir, get_preview
 from DNG import logging
 
@@ -48,13 +49,22 @@ def folder(path):
     path = unquote(path)
     logging.debug("folder %s" % path)
     realpath = join(root, path, '')
-    res = [(de, get_thumb(join(realpath, de)))
-           for de in sorted(os.listdir(realpath), reverse=True)]
-    # Discard directories for which we have no thumbnails
-    res = [(de, orientation)
-           for de, (thumb_path, orientation) in res
-           if thumb_path]
-    return {'listdir': res, 'dir': path}
+
+    response.content_type = 'text/utf-8'
+
+    yield dumps({'dir': path})+'\n'
+
+    for de in sorted(os.listdir(realpath), reverse=True):
+        thumb_path, orientation = get_thumb(join(realpath, de))
+        if thumb_path:
+            # s = dumps({'direntry': de, 'orientation': orientation})+'\n'
+            s = dumps([de, orientation])+'\n'
+            print s
+            yield s
+    # res = [(de, orientation)
+    #        for de, (thumb_path, orientation) in res
+    #        if thumb_path]
+    # return {'listdir': res, 'dir': path}
 
 
 @route("/<path:path>")
@@ -71,6 +81,7 @@ def get_thumb(path):
     logging.debug("get_thumb %s" % path)
     path = join(root, path)
     try:
+        # TODO Might be worth avoiding this isdir check
         if isdir(path):
             return get_dir_thumb(path)
         elif isfile(path):
