@@ -1,5 +1,5 @@
 import os
-from os.path import join, dirname, basename, isfile, isdir, splitext, relpath
+from os.path import join, dirname, basename, isfile, isdir
 from urllib import unquote
 from json import dumps
 
@@ -57,14 +57,9 @@ def folder(path):
     for de in sorted(os.listdir(realpath), reverse=True):
         thumb_path, orientation = get_thumb(join(realpath, de))
         if thumb_path:
-            # s = dumps({'direntry': de, 'orientation': orientation})+'\n'
             s = dumps([de, orientation])+'\n'
-            print s
+            logging.debug(s)
             yield s
-    # res = [(de, orientation)
-    #        for de, (thumb_path, orientation) in res
-    #        if thumb_path]
-    # return {'listdir': res, 'dir': path}
 
 
 @route("/<path:path>")
@@ -100,6 +95,7 @@ def get_dir_thumb(path):
         listdir = os.listdir(path)
         if ".nomedia" in listdir:
             raise HiddenError
+        # splitext is very inefficient here, so we don't use it
         img = [de for de in listdir
                if de[-4:].lower() in ('.dng', '.jpg', 'jpeg')][0]
         res = get_file_thumb(join(path, img))
@@ -122,6 +118,7 @@ def get_file_thumb(path):
     logging.debug("get_file_thumb %s" % path)
     (thumb, orientation) = get_preview(path, thumbnail=True,
                                        return_orientation=True)
+    # Using relpath is very inefficient here, so we don't do it
     return (thumb[len(root):], orientation)
 
 
