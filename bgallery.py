@@ -7,9 +7,14 @@ from bottle import route, run, static_file, response
 from previewcache import set_thumbdir, get_preview
 from DNG import logging
 
+# Root directory
 root = "/srv/originales"
 root = join(root, '')  # Guarantees roots end in /, relevant in get_file_thumb
-set_thumbdir('/srv/originales/.previewcache')
+
+# Preview cache dirctory
+thumbdir = join(root, '.previewcache')
+set_thumbdir(thumbdir)
+open(join(thumbdir, ".nomedia"), "w")  # Make sure  we dont't try to serve it
 
 logging.basicConfig(level=logging.CRITICAL)
 
