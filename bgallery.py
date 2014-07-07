@@ -4,7 +4,7 @@ from urllib import unquote
 from json import dumps
 
 from bottle import route, run, static_file, response
-from previewcache import set_thumbdir, get_preview
+from previewcache import set_thumbdir, get_preview, PreviewError
 from DNG import logging
 
 # Root directory
@@ -111,7 +111,7 @@ def get_dir_thumb(path):
         res = get_file_thumb(join(path, img))
         logging.debug("Got result %s %s" % res)
         return res
-    except IndexError:
+    except (PreviewError, IndexError):
         # No proper images in the directory.
         # Recurse into the subdirectories
         dirlist = [d for d in os.listdir(path)
@@ -120,7 +120,7 @@ def get_dir_thumb(path):
         while(d):
             try:
                 return get_dir_thumb(join(path, d))
-            except IndexError:
+            except (PreviewError, IndexError):
                 d = dirlist.pop(0)
 
 
@@ -131,5 +131,5 @@ def get_file_thumb(path):
     # Using relpath is very inefficient here, so we don't do it
     return (thumb[len(root):], orientation)
 
-
-run(host='192.168.1.40', port=8888, debug=True)
+if __name__ == '__main__':
+    run(host='192.168.1.40', port=8888, debug=True)
