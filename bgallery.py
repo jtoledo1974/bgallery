@@ -18,6 +18,9 @@ open(join(thumbdir, ".nomedia"), "w")  # Make sure  we dont't try to serve it
 
 logging.basicConfig(level=logging.CRITICAL)
 
+DIR = 'dir'
+FILE = 'file'
+
 
 class HiddenError(StandardError):
     pass
@@ -42,7 +45,7 @@ def get_root():
 @route("/thumb/<path:path>")
 def thumb(path):
     logging.debug("thumb %s" % path)
-    thumb_path, orientation = get_thumb(path)
+    thumb_path, orientation, file_type = get_thumb(path)
     filedir = join(root, dirname(thumb_path))
     filename = basename(thumb_path)
     res = static_file(filename, root=filedir)
@@ -62,9 +65,9 @@ def folder(path):
     yield dumps({'dir': path})+'\n'
 
     for de in sorted(os.listdir(realpath), reverse=True):
-        thumb_path, orientation = get_thumb(join(realpath, de))
+        thumb_path, orientation, file_type = get_thumb(join(realpath, de))
         if thumb_path:
-            s = dumps([de, orientation])+'\n'
+            s = dumps([de, orientation, file_type])+'\n'
             logging.debug(s)
             yield s
 
@@ -85,15 +88,15 @@ def get_thumb(path):
     try:
         # TODO Might be worth avoiding this isdir check
         if isdir(path):
-            return get_dir_thumb(path)
+            return get_dir_thumb(path) + (DIR,)
         elif isfile(path):
-            return get_file_thumb(path)
+            return get_file_thumb(path) + (FILE,)
         else:
-            return ('', 1)
+            return ('', 0, None)
     except Exception as e:
         logging.warning(
             "Failed to retrieve a thumbnail for %s: %s" % (path, e))
-        return ("", 1)
+        return ("", 0, None)
 
 
 def get_dir_thumb(path):
