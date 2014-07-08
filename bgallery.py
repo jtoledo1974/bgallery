@@ -42,7 +42,7 @@ def get_root():
     return folder('')
 
 
-@route("/thumb/<path:path>")
+@route("/thumb/<path:path>.jpg")
 def thumb(path):
     logging.debug("thumb %s" % path)
     thumb_path, orientation, file_type = get_thumb(path)
