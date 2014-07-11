@@ -54,6 +54,18 @@ def thumb(path):
     return res
 
 
+@route("/jpeg/<path:path>.jpg")
+def jpeg(path):
+    logging.debug("jpeg %s" % path)
+    preview_path, orientation = get_file_preview(path)
+    filedir = join(root, dirname(preview_path))
+    filename = basename(preview_path)
+    res = static_file(filename, root=filedir)
+    res.set_header('Orientation', orientation)
+    res.set_header('Content-Type', 'image/jpeg')
+    return res
+
+
 @route('/<path:path>/')
 def folder(path):
     path = unquote(path)
@@ -79,6 +91,18 @@ def file(path):
     filedir = join(root, dirname(path))
     filename = basename(path)
     return static_file(filename, root=filedir)
+
+
+# TODO The unquoting and joining should probably be done at
+# the web level, it is certainly inconsistent, with the file here
+# and the generic in the thumb case
+def get_file_preview(path):
+    path = unquote(path)
+    logging.debug("get_preview %s" % path)
+    path = join(root, path)
+    (preview, orientation) = get_preview(path, return_orientation=True)
+    # Using relpath is very inefficient here, so we don't do it
+    return (preview[len(root):], orientation)
 
 
 def get_thumb(path):
