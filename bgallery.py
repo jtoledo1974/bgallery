@@ -76,12 +76,21 @@ def folder(path):
 
     yield dumps({'dir': path})+'\n'
 
-    for de in sorted(os.listdir(realpath), reverse=True):
+    direntries = []
+
+    for de in os.listdir(realpath):
         thumb_path, orientation, file_type = get_thumb(join(realpath, de))
         if thumb_path:
-            s = dumps([de, orientation, file_type])+'\n'
-            logging.debug(s)
-            yield s
+            direntries.append([de, orientation, file_type])
+
+    direntries = sorted([t for t in direntries if t[2] == DIR], reverse=True)\
+        + sorted([t for t in direntries if t[2] == FILE])
+
+    for t in direntries:
+        de, orientation, file_type = t
+        s = dumps([de, orientation, file_type])+'\n'
+        logging.debug(s)
+        yield s
 
 
 @route("/<path:path>")
